@@ -93,9 +93,9 @@ class SDEStepper(Protocol):
         ...
 
 
-class NaiveStepper:
+class NaiveUrnStepper:
     """
-    Simulate a stochastic sytem given the rates
+    Simulate a stochastic sytem given the rates, as an urn model.
     """
     def __init__(
             self,
@@ -132,29 +132,47 @@ class NaiveStepper:
                     The :class:`State` object representing the current state object.
             Returns
             -------
-                
+            increment
+
+            dt
+
         """
         randomnum = np.random.uniform(0,1)
-        probs = np.zeros((len(self.rates)))
+        # The length of the array is the number of rections plus 1 (for no reaction happening)
+        probs = np.zeros((len(self.rates)+1))
+
         for i, ratefunc in enumerate(self.rates):
-            probs[i] = ratefunc.computerate(curstate=curstate)
-        probs = probs/np.sum(probs)
+            probs[i] = ratefunc.computerate(curstate=curstate)*self.dt
+
+        
+        if np.all(probs==0):
+            #return no reaction increment
+#            print('All Zero')
+            increment = np.zeros_like(curstate.x)
+            return increment, self.dt
+
         # print("Probability: ", np.sum(probs))
-        assert np.isclose(np.sum(probs), 1.0)
+        #assert np.isclose(np.sum(probs), 1.0)
         # TODO: Try to implement a binary search here, currently using a linear search.
         # Is the performance for low array size 
+        # probability of no reaction happening
+        probnoreact = np.sum(probs)
+        probs[-1] = probnoreact 
         probssum = np.cumsum(probs)
-        print(probs)
-        print(probssum)
-        print(randomnum)
+#       print(probs)
+#       print(f"The no reaction probability is {probnoreact}")
+#       print(probssum)
+#       print(f"The random number {randomnum
         if probssum[0]>randomnum:
-            print(f"Increments: {self.increments[0]}")
+            # print(f"Increments: {self.increments[0]}")
             return (self.increments[0], self.dt)
-        for i in range(1, probssum.shape[0]):
+        for i in range(1,probssum.shape[0]-1):
             if probssum[i-1]<randomnum and probssum[i]>=randomnum:
-                print(f"Increments: {self.increments[i]}")
+                # print(f"Increments: {self.increments[i]}")
                 return (self.increments[i], self.dt)
-        return None, -1.0
+
+        increment = np.zeros_like(curstate.x)
+        return increment, self.dt
 
 class Simulate:
 
@@ -192,6 +210,8 @@ class Simulate:
         traj[:,0] = self.state.get_state_copy()
         for i in range(1,steps+1):
             x, dt = self.stepper.step(self.state)
+            if dt == -1:
+                raise ValueError
             self.state.update_state(x+self.state.x)
             traj[:,i] = self.state.x
             times[i] = times[i-1] +dt
