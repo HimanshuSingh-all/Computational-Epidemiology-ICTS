@@ -183,11 +183,11 @@ if __name__ == "__main__":
 
     plt.title(f'Simulating {trials} trials for the URN Model for the SIR')
     plt.xlabel('Time')
-    plt.ylabel('Counts')
+    plt.ylabel('Fraction of Population')
+    plt.subplots_adjust(right=0.80)
+    plt.legend(
+        loc="center left",
+        bbox_to_anchor=(1.0, 0.5)
+    )
     plt.savefig(f'urnmodel_naive.png', dpi = 300, bbox_inches = 'tight')
-
-
-
-
-    plt.legend()
     plt.show()

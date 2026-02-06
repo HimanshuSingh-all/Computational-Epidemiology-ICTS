@@ -156,9 +156,10 @@ class NaiveUrnStepper:
         # TODO: Try to implement a binary search here, currently using a linear search.
         # Is the performance for low array size 
         # probability of no reaction happening
-        probnoreact = np.sum(probs)
+        probnoreact = 1-np.sum(probs)
         probs[-1] = probnoreact 
         probssum = np.cumsum(probs)
+        assert np.isclose(probssum[-1], 1.0)
 #       print(probs)
 #       print(f"The no reaction probability is {probnoreact}")
 #       print(probssum)
